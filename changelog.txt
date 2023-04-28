@@ -1,0 +1,42 @@
+##wszystkie skrypty
+- przepływy Power Automate zapisują załączniki do folderu na sharepoincie Payment Advice
+- dla nadawców którzy wysyłają pliki zaszyfrowane(SMIME) stworzyłem osobne przepływy
+- każdy załącznik zapisuje się w lokalizacji: e-mail/dzisiejsza_data
+- za pomocą strony https://developer.microsoft.com/en-us/graph/graph-explorer - sprawdzam ID każdego folderu
+- skrypt sprawdza czy powstał folder z dzisiejszą datą, jeśli tak to wykonuje się skrypt dalej
+- aby zaznaczyć plik już jest przeprocesowany przez skrypt dodane do nazwy: - done
+- skrypt pomija pliki z - done na końcu
+- ze względu na to że nie tylko potwierdzenia płatności przychodzą z tych adresów
+dodaje wyjątki aby sprawdzał rodzaj pliku
+- do otwierania plików bezpośrenio z ShrePointa używam biblioteki io
+- po odpowiednim przekształceniu w DataFrame powstaje tabla o kolumnach: Document_Name, Document_Date, Document_Value
+- Dodanie do bazy:
+Do tabeli: Milarex_PaymentAdvice_Header dodaje: dzisiejszą date, sumę wyciąganą po zsumowaniu tabeli Daocument_Value,
+oraz nazwę kontrahenta- taką samą jak jest w Altumie
+Do tabeli: Milarex_PaymentAdvice_Items dodaje HeaderID który jest ID z tabeli Milarex_PaymentAdvice_Header oraz tabele DataFrame
+
+
+## update 26-04-2023
+- zmiana Power automate: pliki wpadają do głównego folderu, bez podfolderu z dzisiejszą datą
+- po przetworzeniu przez skrypt, pliki są przenoszone do folderu BACKUP/{klient}/{dziejsza_data}
+- refaktoryzacja: osobny plik na export do SQL
+- program odpala się z jednego pliku: main_Arctic
+- wszystcy klienci znajdują się w słowniku: kontrahents w pliku config
+
+
+
+
+## main_aldi_1st_and_2nd_schema
+- za pomocą biblioteki tabula wyodrębniam dane,
+- później przerabiam je w DataFrame
+- są dwa rodzaje PDF'ów, dlatego dwie osobne funkcje
+- są rozróżniane przez nazwę: jeden rodzaj nazwywa się niezmiennie: Attachment.pdf
+- kwoty ujemne są napisane w postaci:'1000,00-', przeniosłem '-' na początek liczby
+
+## main_lidl
+
+- wyciąganie danych na dwojaki sposób: 1 - tabula, 2 - PyPDF2 - jeżeli tabula nie wykryje tabeli
+- nazwy faktur są wpisywane w różny sposób. wszytskie doprowadzam do jednej postaci
+- kwoty ujemne są napisane w postaci:'1000,00-', przeniosłem '-' na początek liczby
+
+
