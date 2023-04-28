@@ -11,9 +11,9 @@ def run():
         try:
             #odpal skrypt sprawdzający czy są pliki w folderze
             check_file(kontarhent_folderID_list, kontrahent_extract_data, kontrahent_name, kontarhent_backup_folderID)
-
+        # obsługa błędu pustego folderu
         except TypeError as e:
-            #obsługa błędu pustego folderu
+
             print(f'pusto. błaD:{e}')
             continue
 
