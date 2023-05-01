@@ -13,22 +13,25 @@ def move_file_to_archive(file_id, file_name, backup_folderID):
     response = requests.get(url, headers=headers)
     response.raise_for_status()
     children = response.json()["value"]
+    today_folder_id = []
     # sprawdzenie czy istnieje już folder z dziejszą datą
     for child in children:
         if child["name"] == str(datetime.date(datetime.today())) and child.get("folder") is not None:
             today_folder_id = child["id"]
             break
         else:
-            #tworzenie folderu, jeśli go nie ma
-            todays_folder = {
-                "name": str(datetime.date(datetime.today())),
-                "folder": {},
-                "@microsoft.graph.conflictBehavior": "rename"
-            }
-            create_todays_folder = requests.post(url, headers=headers, data=json.dumps(todays_folder))
-            today_folder_id = json.loads(create_todays_folder.content).get('id')
-            break
-            # print(today_folder_id)
+
+            today_folder_id = []
+            continue
+    # tworzenie folderu, jeśli go nie ma
+    if today_folder_id == []:
+        todays_folder = {
+            "name": str(datetime.date(datetime.today())),
+            "folder": {},
+            "@microsoft.graph.conflictBehavior": "rename"
+        }
+        create_todays_folder = requests.post(url, headers=headers, data=json.dumps(todays_folder))
+        today_folder_id = json.loads(create_todays_folder.content).get('id')
 
     # url do pliku
     file_url = f"https://graph.microsoft.com/v1.0/drives/{driveID}/items/{file_id}"
