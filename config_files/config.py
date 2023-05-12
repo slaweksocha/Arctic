@@ -20,15 +20,17 @@ driveID = 'b!kxF0fAkRRUOcJzSUIuqGzAYqX9q36DVDgQc-EvmRkW-ail_2LRrnQLQKmhaow8Zk'
 #słownik z kontrahentami
 kontahents = {
     'aldi_sued': {
-    'name': 'Aldi SE & Co.KG Mülheim ',
+    'name': 'Aldi SE  & Co.KG Mülheim ',
     'folderID_list': ['014ESGVDED7HHLOMG73ZCID6IZMH57WQR2'],
     'backupID': '014ESGVDHG3MNEPGYTIJBJFOCVXYLJVY2T',
     'extract_data': 'extract_data_aldi_sued'
     },
     'aldi_nord': {
-    'name': 'Aldi SE & Co.KG Mülheim ',
+    'name': 'Aldi SE  & Co.KG Mülheim ',
     'folderID_list': ['014ESGVDDKM6YTMDZ7DNAITEONLTKQSOYL', '014ESGVDHCAJ2QLKDRENC2NLDFMVWWY27B', '014ESGVDECL5JLVXE54ZCI2DBJ3ESF4EMM',
-                    '014ESGVDDAQQPMSJS7IZCZ2ZGXUTEVYHLQ', '014ESGVDCXO6HF5UUIDNH2JIWCZOBRO5RI', '014ESGVDFNCFTHTTK5ZBD3FSS6F2J4CMPB'],
+                      '014ESGVDDAQQPMSJS7IZCZ2ZGXUTEVYHLQ', '014ESGVDCXO6HF5UUIDNH2JIWCZOBRO5RI', '014ESGVDFNCFTHTTK5ZBD3FSS6F2J4CMPB',
+                      '014ESGVDAIFJVOXHB46FCJNM7YV45DBNZY', '014ESGVDHMDURYFUOFTZFL5FZ7MPFX3Z2Y', '014ESGVDAX25MP5R7PIJGZV2JKAGUYSOCJ',
+                      '014ESGVDENTB5WQHAERVA2JWNW5QNSSOYA', '014ESGVDEGKSYYLXDU2NDLJJ5NF2DL7PNT'],
     'backupID': '014ESGVDDGXOELDZSEFRAIQNSREGK5WAQC',
     'extract_data': 'extract_data_aldi_nord'
     },
@@ -51,10 +53,16 @@ kontahents = {
     'extract_data': 'extract_data_norma'
     },
     'hoferAT': {
-    'name': 'Hofer KG Zentraleinkauf',
+    'name': 'Hofer KG ',
     'folderID_list': ['014ESGVDBA62TQVHCAVZEYAGQEYJIFCR34'],
     'backupID': '014ESGVDELNAZWP4HU2BHYZXKXBIXHYA6Y',
     'extract_data': 'extract_data_hoferAT'
+    },
+    'lidl_it':{
+    'name': 'Lidl Italia s.r.l. a socio unico',
+    'folderID_list': ['014ESGVDAA3AVWNKKYQBCYIXQXAKYT66UF'],
+    'backupID': '014ESGVDDUYDL4UBJ6MFCI7ORQUODOOVUU',
+    'extract_data': 'extract_data_lidl_it'
     }
     # 'markant':{
     # 'name': 'Kaufland Dienstleistung GmbH & Co.KG',
@@ -62,6 +70,68 @@ kontahents = {
     # 'backupID': '014ESGVDELNAZWP4HU2BHYZXKXBIXHYA6Y',
     # 'extract_data': 'extract_data_markant'
     # }
+}
+#to add
+to_add = {'lidl_lt':{
+    'name': 'Lidl Lietuva UAB',
+    'folderID_list': ['014ESGVDD3GTRPMRWWJNB2N7AJVOMYNQ5O'],
+    'backupID': '014ESGVDDCBVL3Q5JM7JFIXMK6B7XKWMPG',
+    'extract_data': 'extract_data_lidl_at_si_es_lt_cz_int'
+    },
+    'lidl_at':{
+    'name': 'LIDL_AT Österreich GmbH',
+    'folderID_list': ['014ESGVDCIVBTAT3OGJRGLPI7I2IXPDBVM'],
+    'backupID': '014ESGVDDVGEHHDPZ5GFF3ZJXTF7Q4BGOC',
+    'extract_data': 'extract_data_lidl_at_si_es_lt_cz_int'
+    },
+    'lidl_cz':{
+    'name': 'Lidl Česká republika, v.o.s.',
+    'folderID_list': ['014ESGVDEMBTCXJUUIBNDZJMOHZNOCYO2G'],
+    'backupID': '014ESGVDBW76HSS4ULQFFLLCOGKLOX7KBG',
+    'extract_data': 'extract_data_lidl_at_si_es_lt_cz_int'
+    },
+    'lidl_es':{
+    'name': 'Lidl Supermercados S.A.U.',
+    'folderID_list': ['014ESGVDBLYCJ2CYL7HZDKROPH5LMJDM6B'],
+    'backupID': '014ESGVDFGAXXLUGJXANALGW42U7SWKC7S',
+    'extract_data': 'extract_data_lidl_at_si_es_lt_cz_int'
+    },
+    'lidl_si':{
+    'name': 'Lidl Slovenija d.o.o. k.d.',
+    'folderID_list': ['014ESGVDBTQEQU3WA46ZCKF7E6LPVPKJ6W', '014ESGVDAKF2GJ2NLHRNEKY6QNJ445HMGA'],
+    'backupID': '014ESGVDBCO77C54MI3BH3LGV2R4ECXJJN',
+    'extract_data': 'extract_data_lidl_at_si_es_lt_cz_int'
+    },
+    'lidl_int':{
+    'name': 'Lidl Export International GmbH & Co. KG',
+    'folderID_list': ['014ESGVDATSSWQZRXGWFHI537WXYRWFEQT'],
+    'backupID': '014ESGVDATRCY4BQJHMRAJ6UGL7OJBBJCD',
+    'extract_data': 'extract_data_lidl_at_si_es_lt_cz_int'
+    },
+    'lidl_fr':{
+    'name': 'Lidl SNC France',
+    'folderID_list': ['014ESGVDFA64MXY66VUNB3XTLNC3RPJRM3'],
+    'backupID': '014ESGVDEQMHOBOHT5QVHZ6VNSVG7CDD34',
+    'extract_data': 'extract_data_lidl_fr'
+    },
+    'lidl_rs':{
+    'name': 'Lidl Srbija KD',
+    'folderID_list': ['014ESGVDBV2NXPAQ7UXZDICZ2AVLEY5I3N'],
+    'backupID': '014ESGVDG2EX2LGHCAZZHJJRBHDRXNH6CJ',
+    'extract_data': 'extract_data_lidl_rs'
+    },
+    'lidl_hr':{
+    'name': 'Lidl Hrvatska d.o.o. k.d.',
+    'folderID_list': ['014ESGVDFZRTQQLZSR5VFIAVVK44IGHOBZ'],
+    'backupID': '014ESGVDG7W4KMBYSED5A2W6UZKJ3GI54O',
+    'extract_data': 'extract_data_lidl_hr'
+    },
+    'lidl_nl':{
+    'name': 'Lidl Nederland GmbH',
+    'folderID_list': ['014ESGVDE72SS3RCVYSZDINLUIVKM2IPOR'],
+    'backupID': '014ESGVDAU7OFWCSMSJVEKFGSPHJSBHA7P',
+    'extract_data': 'extract_data_lidl_nl'
+    }
 }
 # for i, value in kontahents.items():
 #     if value['extract_data'] == 'extract_data_hoferAT':

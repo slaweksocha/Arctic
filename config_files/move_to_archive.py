@@ -3,6 +3,7 @@ from datetime import datetime
 import requests
 from config_files.graph import get_access_token
 import json
+from config_files.logs import log_add_line
 
 def move_file_to_archive(file_id, file_name, backup_folderID):
     #url do folderu backup
@@ -20,7 +21,6 @@ def move_file_to_archive(file_id, file_name, backup_folderID):
             today_folder_id = child["id"]
             break
         else:
-
             today_folder_id = []
             continue
     # tworzenie folderu, jeśli go nie ma
@@ -48,6 +48,6 @@ def move_file_to_archive(file_id, file_name, backup_folderID):
 
     #sprawdzanie połączenia
     if response.status_code == 200:
-        print("File name changed successfully.")
+        log_add_line(f"plik {file_name} przeprocesowany oraz przeniesiony do archiwum")
     else:
         print("Error changing file name:", response.status_code, response.text)

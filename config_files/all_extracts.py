@@ -75,6 +75,7 @@ def extract_data_lidl(pdf_file):
             df = df[['Document_Name', 'Document_Date', 'Document_Value']]
             df.iloc[:, 2] = df.iloc[:, 2].str.replace('.', '')
             df.iloc[:, 2] = pd.to_numeric(df.iloc[:, 2].str.replace(',', '.'))
+
             # print(len(df['Document_Value']))
             return df
     else:
@@ -172,6 +173,8 @@ def extract_data_norma(pdf_file):
 
     df = df.drop(columns=[2, 3, 5])
     df = df.dropna()
+    df['Document_Name'] = df['Document_Name'].replace('^VR(\d{4})/(\d{2})/(\d{5})$', r'VR/\1/\2/\3', regex=True)
+    df['Document_Name'] = df['Document_Name'].replace('^VR(\d{4})(\d{2})(\d{5})$', r'VR/\1/\2/\3', regex=True)
     df.iloc[:, 2] = df.iloc[:, 2].str.replace('.', '')
     df.iloc[:, 2] = pd.to_numeric(df.iloc[:, 2].str.replace(',', '.'))
     return df
@@ -186,14 +189,13 @@ def extract_data_aldi_sued(pdf_file):
 
     df = df[['Document_Name', 'Document_Date', 'Document_Value']]
     df = df.reset_index(drop=True)
-    for i, value in enumerate(df['Document_Name']):
-        if not value.startswith('VR'):
+    for i, value in enumerate(df['Document_Value']):
+        if value.startswith('Zahlbetrag'):
             df.drop(i, inplace=True)
     df['Document_Name'] = df['Document_Name'].replace('^VR (\d{4}) (\d{2}) (\d{5})$', r'VR/\1/\2/\3', regex=True)
     df = df.reset_index(drop=True)
     df.iloc[:, 2] = df.iloc[:, 2].str.replace('.', '')
     df.iloc[:, 2] = pd.to_numeric(df.iloc[:, 2].str.replace(',', '.'))
-    print(df)
     return df
 
 def extract_data_aldi_sued_2(pdf_file):
@@ -267,7 +269,9 @@ def extract_data_aldi_nord(pdf_file):
     #Różnie są wpisywane nazwy faktur. sprowadzam wszystkie do jednakowego formatu
     df['Document_Name'] = df['Document_Name'].replace('^VR(\d{4})(\d{2})(\d{5})$', r'VR/\1/\2/\3', regex=True)
     df['Document_Name'] = df['Document_Name'].replace('^(\d{4})(\d{2})(\d{5})$', r'VR/\1/\2/\3', regex=True)
+    df['Document_Name'] = df['Document_Name'].replace('^(\d{4})/(\d{2})/(\d{5})$', r'VR/\1/\2/\3', regex=True)
     df['Document_Name'] = df['Document_Name'].replace('^VR/(\d{4})/(\d{2})/(\d{5})$', r'VR/\1/\2/\3', regex=True)
+    df['Document_Name'] = df['Document_Name'].replace('^VR/(\d{4})(\d{2})(\d{5})$', r'VR/\1/\2/\3', regex=True)
     #usunięcie wierszy, gdzie conajmniej jedna wartość jest None
     df = df.dropna()
     #usuwam wiersz z  nagłówkami
@@ -375,3 +379,416 @@ def extract_data_aldi_nord(pdf_file):
 #         #     if 'Summenwerte auf Listen-Ebene' in value['Document_name']:
 #     except ValueError as e:
 #         print('to inny plik')
+
+def extract_data_lidl_at_si_es_lt_cz_int(pdf_file):
+    # użycie tabuli
+    df = tabula.read_pdf(pdf_file, pages='all', encoding="ISO-8859-1", pandas_options={'header': None})
+    # #jeżeli wartość
+    if df == []:
+            # with pdf_file as pdf:
+        pdf_reader = PyPDF2.PdfFileReader(pdf_file)
+        # pdf = io.open(pdf_file, 'rb', buffering=0)
+        start_marker = 'Beleg'
+        end_marker = '_\nGesamt-Summe'
+
+        intervals = [(0, 68)]
+
+        # Create a PDF reader object
+        # pdf_reader = PyPDF2.PdfFileReader(pdf)
+        data = []
+        # print('dupa')
+        for page_num in range(pdf_reader.getNumPages()):
+            # Get the page object
+            page = pdf_reader.getPage(page_num)
+
+            # Extract the text from the page
+            text = page.extract_text()
+
+            # Find the start and end positions of the relevant text
+            start_pos = text.find(start_marker)
+            end_pos = text.find(end_marker)
+
+            # Extract the relevant text
+            relevant_text = text[start_pos:end_pos]
+
+            # Split the text into rows
+            rows = relevant_text.split('\n')
+            for row in rows:
+                if row.startswith(start_marker) or row.startswith(end_marker):
+                    continue
+                row_data = []
+                for interval in intervals:
+                    row_data.append(row[interval[0]:interval[1]].strip())
+                data.append(row_data)
+
+    # Create a Pandas DataFrame from the extracted data
+        pd.set_option('display.max_rows', None)
+        pd.set_option('display.max_columns', None)
+        df = pd.DataFrame(data)
+        df[0] = df[0].str.replace(' +', ' ').str.replace('_', '')
+        df = df[df[0].str.match(r'^\d{8}')]
+        df = df.dropna()
+        # print(df)
+        # df = df[df[1].str.match(r'^\d{1,3}(?:\.\d{3})*(?:,\d{2})$')]
+        df[['temp', 'Document_Name', 'Document_Date', 'temp1', 'Document_Value']] = df[0].str.split(' ', n=5, expand=True)
+
+        df = df.drop(columns=['temp', 'temp1'])
+        df['Document_Name'] = df['Document_Name'].replace('^VR(\d{4})(\d{2})(\d{5})$', r'VR/\1/\2/\3', regex=True)
+        df['Document_Name'] = df['Document_Name'].replace('^(\d{4})(\d{2})(\d{5})$', r'VR/\1/\2/\3', regex=True)
+        df['Document_Name'] = df['Document_Name'].replace('^VR/(\d{4})/(\d{2})/(\d{5})$', r'VR/\1/\2/\3',
+                                                          regex=True)
+        df['Document_Name'] = df['Document_Name'].replace('^VR[^/](\d{4})/(\d{2})/(\d{5})$', r'VR/\1/\2/\3',
+                                                          regex=True)
+        # df = df.drop(df.index[-4:])
+        df = df.drop_duplicates()
+        df = df.replace(' ', pd.NA).replace('', pd.NA)
+        df = df.dropna(how='all')
+        df = df.reset_index(drop=True)
+        for i, value in enumerate(df['Document_Value']):
+
+            value = str(value).strip()
+
+            # Check if the string ends with '-' and starts with a number
+            if value.endswith('-') and value[0].isdigit():
+                # Swap the positions of the '-' sign and the number using string slicing and concatenation
+                value = '-' + value[:-1]
+
+                # Update the value in the DataFrame
+                df.at[i, 'Document_Value'] = value
+
+        df = df[['Document_Name', 'Document_Date', 'Document_Value']]
+        df.iloc[:, 2] = df.iloc[:, 2].str.replace('.', '')
+        df.iloc[:, 2] = pd.to_numeric(df.iloc[:, 2].str.replace(',', '.'))
+        print(df)
+        return df
+    else:
+        # łączenie wszystkich DataFrame ze wszystkich stron
+        df = pd.concat(df)
+        # print(df)
+        # usuwanie wierszy, kiedy jest jakaś pusta pozycja
+        # df = df.dropna()
+        # usuwa duplikaty - nagłówki ze stron
+        # df = df.drop_duplicates()
+        # usuwa nagłówek
+        df = df[df[0].str.match(r'^\d{8}')]
+        #
+        df[['temp', 'Document_Name', 'Document_Date']] = df[0].str.split(' ', n=2, expand=True)
+        df = df.drop(columns=[0, 'temp', 2])
+        # zmiana nazwy na prowidłową
+        df = df.rename(columns={3: 'Document_Value'})
+        df['Document_Name'] = df['Document_Name'].replace('^VR(\d{4})(\d{2})(\d{5})$', r'VR/\1/\2/\3', regex=True)
+        df['Document_Name'] = df['Document_Name'].replace('^(\d{4})(\d{2})(\d{5})$', r'VR/\1/\2/\3', regex=True)
+        df['Document_Name'] = df['Document_Name'].replace('^VR/(\d{4})/(\d{2})/(\d{5})$', r'VR/\1/\2/\3', regex=True)
+        df['Document_Name'] = df['Document_Name'].replace('^VR(\d{1})(\d{4})/(\d{2})/(\d{5})$', r'VR/\2/\3/\4', regex=True)
+
+
+        df = df.reset_index(drop=True)
+        #przeniesienie minusa na początek kwoty
+        for i, value in enumerate(df['Document_Value']):
+
+            value = str(value).strip()
+
+            # Check if the string ends with '-' and starts with a number
+            if value.endswith('-') and value[0].isdigit():
+                # Swap the positions of the '-' sign and the number using string slicing and concatenation
+                value = '-' + value[:-1]
+
+                # Update the value in the DataFrame
+                df.at[i, 'Document_Value'] = value
+        #ustawienie porządanej kolejności kolumn
+        df = df[['Document_Name', 'Document_Date', 'Document_Value']]
+        df = df.dropna()
+        #doprowadzenie kolumny z kwotami do porządanego formatu
+        df.iloc[:, 2] = df.iloc[:, 2].str.replace('.', '')
+        df.iloc[:, 2] = pd.to_numeric(df.iloc[:, 2].str.replace(',', '.'))
+        print(df)
+        return df
+
+def extract_data_lidl_fr(pdf_file):
+    # użycie tabuli
+    df = tabula.read_pdf(pdf_file, pages='all', encoding="ISO-8859-1", pandas_options={'header': None})
+
+    # łączenie wszystkich DataFrame ze wszystkich stron
+    df = pd.concat(df)
+
+    df = df[df[0].str.match(r'^\d{8}')]
+    df = df.reset_index(drop=True)
+
+
+    df[['temp', 'Document_Name1', 'Document_Date1']] = df[0].str.split(' ', n=2, expand=True)
+    date_regex = r'\d{2}\.\d{2}\.\d{4}'
+
+    # sprawdzanie, które wartości nie pasują do wzorca daty
+    not_matching = ~df['Document_Date1'].str.match(date_regex, na=False)
+    is_matching1 = df['Document_Date1'].str.match(date_regex, na=False)
+    is_matching2 = df[1].str.match(date_regex, na=False)
+
+    # przenoszenie wartości niepasujących do nowej kolumny 'Niepoprawne dane'
+    df.loc[not_matching, 'Document_Name2'] = df.loc[not_matching, 'Document_Date1']
+    df.loc[is_matching1, 'Document_Date3'] = df.loc[is_matching1, 'Document_Date1']
+    df.loc[is_matching2, 'Document_Date2'] = df.loc[is_matching2, 1]
+    df = df.fillna('')
+    df['Document_Name'] = df[['Document_Name1', 'Document_Name2']].agg(' '.join, axis=1)
+    df['Document_Date'] = df[['Document_Date3', 'Document_Date2']].agg(''.join, axis=1)
+    df = df.rename(columns={3: 'Document_Value'})
+    df['Document_Name'] = df['Document_Name'].replace('^VR(\d{4})(\d{2})(\d{5})$', r'VR/\1/\2/\3', regex=True)
+    df['Document_Name'] = df['Document_Name'].replace('^(\d{4})(\d{2})(\d{5})$', r'VR/\1/\2/\3', regex=True)
+    df['Document_Name'] = df['Document_Name'].replace('^VR/(\d{4})/(\d{2})/(\d{5})$', r'VR/\1/\2/\3', regex=True)
+    df['Document_Name'] = df['Document_Name'].replace('^VR(\d{1})(\d{4})/(\d{2})/(\d{5})$', r'VR/\2/\3/\4', regex=True)
+    df['Document_Name'] = df['Document_Name'].str.strip()
+
+    df = df.reset_index(drop=True)
+    #przeniesienie minusa na początek kwoty
+    for i, value in enumerate(df['Document_Value']):
+
+        value = str(value).strip()
+
+        # Check if the string ends with '-' and starts with a number
+        if value.endswith('-') and value[0].isdigit():
+            # Swap the positions of the '-' sign and the number using string slicing and concatenation
+            value = '-' + value[:-1]
+
+            # Update the value in the DataFrame
+            df.at[i, 'Document_Value'] = value
+    #ustawienie porządanej kolejności kolumn
+    df = df[['Document_Name', 'Document_Date', 'Document_Value']]
+
+    df = df.dropna()
+    #doprowadzenie kolumny z kwotami do porządanego formatu
+    df.iloc[:, 2] = df.iloc[:, 2].str.replace('.', '')
+    df.iloc[:, 2] = pd.to_numeric(df.iloc[:, 2].str.replace(',', '.'))
+    print(df)
+    return df
+
+
+def extract_data_lidl_it(pdf_file):
+    # użycie tabuli
+    df = tabula.read_pdf(pdf_file, pages='all', encoding="ISO-8859-1", pandas_options={'header': None})
+
+    # łączenie wszystkich DataFrame ze wszystkich stron
+    df = pd.concat(df)
+    df[['Document_Name', 'Document_Date']] = df[0].str.split(' ', n=2, expand=True)
+
+    df = df.rename(columns={2: 'Document_Value'})
+
+    # #ustawienie porządanej kolejności kolumn
+    df = df[['Document_Name', 'Document_Date', 'Document_Value']]
+    df = df.dropna()
+    df = df.drop(0)
+    #doprowadzenie kolumny z kwotami do porządanego formatu
+    df.iloc[:, 2] = df.iloc[:, 2].str.replace('.', '')
+    df.iloc[:, 2] = pd.to_numeric(df.iloc[:, 2].str.replace(',', '.'))
+    print(df)
+    return df
+
+
+def extract_data_lidl_rs(pdf_file):
+    # użycie tabuli
+    df = tabula.read_pdf(pdf_file, pages='all', encoding="ISO-8859-1", pandas_options={'header': None})
+
+    # łączenie wszystkich DataFrame ze wszystkich stron
+    df = pd.concat(df)
+    df = df[df[0].str.match(r'^\d{8}')]
+    df[['temp','Document_Name']] = df[0].str.split(' ', n=2, expand=True)
+
+    df = df.rename(columns={4: 'Document_Value', 1: 'Document_Date'})
+    df = df.reset_index(drop=True)
+    #przeniesienie minusa na początek kwoty
+    for i, value in enumerate(df['Document_Value']):
+
+        value = str(value).strip()
+
+        # Check if the string ends with '-' and starts with a number
+        if value.endswith('-') and value[0].isdigit():
+            # Swap the positions of the '-' sign and the number using string slicing and concatenation
+            value = '-' + value[:-1]
+
+            # Update the value in the DataFrame
+            df.at[i, 'Document_Value'] = value
+    #ustawienie porządanej kolejności kolumn
+    df = df[['Document_Name', 'Document_Date', 'Document_Value']]
+    # #doprowadzenie kolumny z kwotami do porządanego formatu
+    df.iloc[:, 2] = df.iloc[:, 2].str.replace('.', '')
+    df.iloc[:, 2] = pd.to_numeric(df.iloc[:, 2].str.replace(',', '.'))
+    print(df)
+    return df
+
+
+def extract_data_lidl_hr(pdf_file):
+    # użycie tabuli
+    # df = tabula.read_pdf(pdf_file, pages='all', encoding="ISO-8859-1", pandas_options={'header': None})
+    # # # print(df_col)
+    # # #jeżeli wartość
+    # if df == []:
+            # with pdf_file as pdf:
+    pdf_reader = PyPDF2.PdfFileReader(pdf_file)
+    # pdf = io.open(pdf_file, 'rb', buffering=0)
+    start_marker = 'Beleg'
+    end_marker = '_\nGesamt-Summe'
+
+    intervals = [(0, 68)]
+
+    # Create a PDF reader object
+    # pdf_reader = PyPDF2.PdfFileReader(pdf)
+    data = []
+    # print('dupa')
+    for page_num in range(pdf_reader.getNumPages()):
+        # Get the page object
+        page = pdf_reader.getPage(page_num)
+
+        # Extract the text from the page
+        text = page.extract_text()
+
+        # Find the start and end positions of the relevant text
+        start_pos = text.find(start_marker)
+        end_pos = text.find(end_marker)
+
+        # Extract the relevant text
+        relevant_text = text[start_pos:end_pos]
+
+        # Split the text into rows
+        rows = relevant_text.split('\n')
+        for row in rows:
+            if row.startswith(start_marker) or row.startswith(end_marker):
+                continue
+            row_data = []
+            for interval in intervals:
+                row_data.append(row[interval[0]:interval[1]].strip())
+            data.append(row_data)
+
+# Create a Pandas DataFrame from the extracted data
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.max_columns', None)
+    df = pd.DataFrame(data)
+    df[0] = df[0].str.replace(' +', ' ').str.replace('_', '')
+    df = df[df[0].str.match(r'^\d{8}')]
+    df = df.dropna()
+    # print(df)
+    # df = df[df[1].str.match(r'^\d{1,3}(?:\.\d{3})*(?:,\d{2})$')]
+
+    # df = df.to_excel('test_lidl.xlsx', index=False)
+
+
+    df[['temp', 'Document_Name', 'Document_Date', 'temp1', 'temp2', 'Document_Value']] = df[0].str.split(' ', n=5, expand=True)
+
+    df = df.drop(columns=['temp', 'temp1'])
+    df['Document_Name'] = df['Document_Name'].replace('^VR(\d{4})(\d{2})(\d{5})$', r'VR/\1/\2/\3', regex=True)
+    df['Document_Name'] = df['Document_Name'].replace('^(\d{4})(\d{2})(\d{5})$', r'VR/\1/\2/\3', regex=True)
+    df['Document_Name'] = df['Document_Name'].replace('^VR/(\d{4})/(\d{2})/(\d{5})$', r'VR/\1/\2/\3',
+                                                      regex=True)
+    df['Document_Name'] = df['Document_Name'].replace('^VR[^/](\d{4})/(\d{2})/(\d{5})$', r'VR/\1/\2/\3',
+                                                      regex=True)
+    # df = df.drop(df.index[-4:])
+    df = df.drop_duplicates()
+    df = df.replace(' ', pd.NA).replace('', pd.NA)
+    df = df.dropna(how='all')
+    df = df.reset_index(drop=True)
+    for i, value in enumerate(df['Document_Value']):
+
+        value = str(value).strip()
+
+        # Check if the string ends with '-' and starts with a number
+        if value.endswith('-') and value[0].isdigit():
+            # Swap the positions of the '-' sign and the number using string slicing and concatenation
+            value = '-' + value[:-1]
+
+            # Update the value in the DataFrame
+            df.at[i, 'Document_Value'] = value
+
+    df = df[['Document_Name', 'Document_Date', 'Document_Value']]
+    df.iloc[:, 2] = df.iloc[:, 2].str.replace('.', '')
+    df.iloc[:, 2] = pd.to_numeric(df.iloc[:, 2].str.replace(',', '.'))
+    print(df)
+    # print(len(df['Document_Value']))
+    return df
+
+
+def extract_data_lidl_nl(pdf_file):
+    # użycie tabuli
+    # df = tabula.read_pdf(pdf_file, pages='all', encoding="ISO-8859-1", pandas_options={'header': None})
+    # # # print(df_col)
+    # # #jeżeli wartość
+    # if df == []:
+            # with pdf_file as pdf:
+    pdf_reader = PyPDF2.PdfFileReader(pdf_file)
+    # pdf = io.open(pdf_file, 'rb', buffering=0)
+    start_marker = 'Beleg'
+    end_marker = '_\nGesamt-Summe'
+
+    intervals = [(0, 68)]
+
+    # Create a PDF reader object
+    # pdf_reader = PyPDF2.PdfFileReader(pdf)
+    data = []
+    # print('dupa')
+    for page_num in range(pdf_reader.getNumPages()):
+        # Get the page object
+        page = pdf_reader.getPage(page_num)
+
+        # Extract the text from the page
+        text = page.extract_text()
+
+        # Find the start and end positions of the relevant text
+        start_pos = text.find(start_marker)
+        end_pos = text.find(end_marker)
+
+        # Extract the relevant text
+        relevant_text = text[start_pos:end_pos]
+
+        # Split the text into rows
+        rows = relevant_text.split('\n')
+        for row in rows:
+            if row.startswith(start_marker) or row.startswith(end_marker):
+                continue
+            row_data = []
+            for interval in intervals:
+                row_data.append(row[interval[0]:interval[1]].strip())
+            data.append(row_data)
+
+# Create a Pandas DataFrame from the extracted data
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.max_columns', None)
+    df = pd.DataFrame(data)
+    df[0] = df[0].str.replace(' +', ' ').str.replace('_', '')
+    df = df[df[0].str.match(r'^\d{8}')]
+    # df = df.dropna()
+    df[0] = df[0].str.strip()
+    # print(df)
+    # print(df)
+    # df = df[df[1].str.match(r'^\d{1,3}(?:\.\d{3})*(?:,\d{2})$')]
+
+    # df = df.to_excel('test_lidl.xlsx', index=False)
+
+
+    df[['temp', 'Document_Name', 'Document_Date', 'Document_Value']] = df[0].str.split(' ', n=4, expand=True)
+
+    # df = df.drop(columns=['temp', 'temp1'])
+    df['Document_Name'] = df['Document_Name'].replace('^VR(\d{4})(\d{2})(\d{5})$', r'VR/\1/\2/\3', regex=True)
+    df['Document_Name'] = df['Document_Name'].replace('^(\d{4})(\d{2})(\d{5})$', r'VR/\1/\2/\3', regex=True)
+    df['Document_Name'] = df['Document_Name'].replace('^VR/(\d{4})/(\d{2})/(\d{5})$', r'VR/\1/\2/\3',
+                                                      regex=True)
+    df['Document_Name'] = df['Document_Name'].replace('^VR[^/](\d{4})/(\d{2})/(\d{5})$', r'VR/\1/\2/\3',
+                                                      regex=True)
+    # df = df.drop(df.index[-4:])
+    df = df.drop_duplicates()
+    df = df.replace(' ', pd.NA).replace('', pd.NA)
+    df = df.dropna(how='all')
+    df = df.reset_index(drop=True)
+    for i, value in enumerate(df['Document_Value']):
+
+        value = str(value).strip()
+
+        # Check if the string ends with '-' and starts with a number
+        if value.endswith('-') and value[0].isdigit():
+            # Swap the positions of the '-' sign and the number using string slicing and concatenation
+            value = '-' + value[:-1]
+
+            # Update the value in the DataFrame
+            df.at[i, 'Document_Value'] = value
+
+    df = df[['Document_Name', 'Document_Date', 'Document_Value']]
+    df.iloc[:, 2] = df.iloc[:, 2].str.replace('.', '')
+    df.iloc[:, 2] = pd.to_numeric(df.iloc[:, 2].str.replace(',', '.'))
+    print(df)
+    # print(len(df['Document_Value']))
+    return df

@@ -1,12 +1,14 @@
 from config_files.config import Server, User, Password, DataBase, kontahents
 from datetime import datetime
 import pyodbc
+from config_files.logs import log_add_line
 # from config_files.files_check import check_file
 # from config_files.move_to_archive import move_file_to_archive
 # from config_files.send_webhook import webhook
 
 def export_to_SQL(df, extract_date, extract_sum,kontrahent_name,pdf_name):
     #ustawienie połączenia SQL
+    log_add_line(f'dodawanie do bazy SQL pliku {pdf_name}')
     conn = pyodbc.connect(
         "Driver={SQL Server};"
         f'SERVER={Server};'
@@ -17,10 +19,10 @@ def export_to_SQL(df, extract_date, extract_sum,kontrahent_name,pdf_name):
 
     cursor = conn.cursor()
     # dodanie do tabeli Header
-    cursor.execute('''IF NOT EXISTS (SELECT 1 FROM dbo.Milarex_PaymentAdvice_Header WHERE Payment_Value = ? AND Payment_Customer = ?)
+    cursor.execute('''IF NOT EXISTS (SELECT 1 FROM dbo.Milarex_PaymentAdvice_Header WHERE Payment_Value = ? AND Payment_File = ? AND Payment_Customer = ?)
                                 INSERT INTO dbo.Milarex_PaymentAdvice_Header (Payment_Date, Payment_Value, Payment_File, Payment_Customer)
                                 VALUES (?,?,?,?)
-                                ''', extract_sum, kontrahent_name, datetime.strptime(extract_date, '%d.%m.%Y'),
+                                ''', extract_sum, pdf_name, kontrahent_name, datetime.strptime(extract_date, '%d.%m.%Y'),
                    extract_sum,
                    pdf_name,
                    kontrahent_name
