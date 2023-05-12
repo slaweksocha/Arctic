@@ -63,16 +63,8 @@ kontahents = {
     'folderID_list': ['014ESGVDAA3AVWNKKYQBCYIXQXAKYT66UF'],
     'backupID': '014ESGVDDUYDL4UBJ6MFCI7ORQUODOOVUU',
     'extract_data': 'extract_data_lidl_it'
-    }
-    # 'markant':{
-    # 'name': 'Kaufland Dienstleistung GmbH & Co.KG',
-    # 'folderID_list': ['014ESGVDB4ANY4HFF33VFZ5DSYKZH4EAIS'],
-    # 'backupID': '014ESGVDELNAZWP4HU2BHYZXKXBIXHYA6Y',
-    # 'extract_data': 'extract_data_markant'
-    # }
-}
-#to add
-to_add = {'lidl_lt':{
+    },
+    'lidl_lt':{
     'name': 'Lidl Lietuva UAB',
     'folderID_list': ['014ESGVDD3GTRPMRWWJNB2N7AJVOMYNQ5O'],
     'backupID': '014ESGVDDCBVL3Q5JM7JFIXMK6B7XKWMPG',
@@ -132,7 +124,15 @@ to_add = {'lidl_lt':{
     'backupID': '014ESGVDAU7OFWCSMSJVEKFGSPHJSBHA7P',
     'extract_data': 'extract_data_lidl_nl'
     }
+    # 'markant':{
+    # 'name': 'Kaufland Dienstleistung GmbH & Co.KG',
+    # 'folderID_list': ['014ESGVDB4ANY4HFF33VFZ5DSYKZH4EAIS'],
+    # 'backupID': '014ESGVDELNAZWP4HU2BHYZXKXBIXHYA6Y',
+    # 'extract_data': 'extract_data_markant'
+    # }
 }
+#to add
+
 # for i, value in kontahents.items():
 #     if value['extract_data'] == 'extract_data_hoferAT':
 #         print(value['extract_data'])

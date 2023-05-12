@@ -14,10 +14,54 @@ def move_file_to_archive(file_id, file_name, backup_folderID):
     response = requests.get(url, headers=headers)
     response.raise_for_status()
     children = response.json()["value"]
+    year_folder_id = []
+    month_folder_id = []
     today_folder_id = []
     # sprawdzenie czy istnieje już folder z dziejszą datą
     for child in children:
-        if child["name"] == str(datetime.date(datetime.today())) and child.get("folder") is not None:
+        if child["name"] == str(datetime.now().year) and child.get("folder") is not None:
+            year_folder_id = child["id"]
+            break
+        else:
+            year_folder_id = []
+            continue
+    # tworzenie folderu, jeśli go nie ma
+    if year_folder_id == []:
+        year_folder = {
+            "name": str(datetime.now().year),
+            "folder": {},
+            "@microsoft.graph.conflictBehavior": "rename"
+        }
+        create_year_folder = requests.post(url, headers=headers, data=json.dumps(year_folder))
+        year_folder_id = json.loads(create_year_folder.content).get('id')
+
+    url = f"https://graph.microsoft.com/v1.0/drives/{driveID}/items/{year_folder_id}/children"
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    children = response.json()["value"]
+    for child in children:
+        if child["name"] == str(datetime.now().month) and child.get("folder") is not None:
+            month_folder_id = child["id"]
+            break
+        else:
+            month_folder_id = []
+            continue
+
+    # tworzenie folderu, jeśli go nie ma
+    if month_folder_id == []:
+        month_folder = {
+            "name": str(datetime.now().month),
+            "folder": {},
+            "@microsoft.graph.conflictBehavior": "rename"
+        }
+        create_month_folder = requests.post(url, headers=headers, data=json.dumps(month_folder))
+        month_folder_id = json.loads(create_month_folder.content).get('id')
+    url = f"https://graph.microsoft.com/v1.0/drives/{driveID}/items/{month_folder_id}/children"
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    children = response.json()["value"]
+    for child in children:
+        if child["name"] == str(datetime.now().day) and child.get("folder") is not None:
             today_folder_id = child["id"]
             break
         else:
@@ -26,7 +70,7 @@ def move_file_to_archive(file_id, file_name, backup_folderID):
     # tworzenie folderu, jeśli go nie ma
     if today_folder_id == []:
         todays_folder = {
-            "name": str(datetime.date(datetime.today())),
+            "name": str(datetime.now().day),
             "folder": {},
             "@microsoft.graph.conflictBehavior": "rename"
         }
