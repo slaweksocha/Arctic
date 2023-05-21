@@ -19,6 +19,12 @@ driveID = 'b!kxF0fAkRRUOcJzSUIuqGzAYqX9q36DVDgQc-EvmRkW-ail_2LRrnQLQKmhaow8Zk'
 # aldi_uk_folderID = '014ESGVDBKPK2QHDGQDZGKM76SIBCBFAVX'
 #słownik z kontrahentami
 kontahents = {
+    'markant':{
+    'name': 'Kaufland Dienstleistung GmbH & Co.KG',
+    'folderID_list': ['014ESGVDB4ANY4HFF33VFZ5DSYKZH4EAIS'],
+    'backupID': '014ESGVDAXVCYACKLXRNBZ7ZHKIBJ2B6LP',
+    'extract_data': 'extract_data_markant'
+    },
     'aldi_sued': {
     'name': 'Aldi SE  & Co.KG Mülheim ',
     'folderID_list': ['014ESGVDED7HHLOMG73ZCID6IZMH57WQR2'],
@@ -123,11 +129,17 @@ kontahents = {
     'folderID_list': ['014ESGVDE72SS3RCVYSZDINLUIVKM2IPOR'],
     'backupID': '014ESGVDAU7OFWCSMSJVEKFGSPHJSBHA7P',
     'extract_data': 'extract_data_lidl_nl'
+    },
+    'edeka':{
+    'name': 'EDEKA Zentralhandelsgesellschaft mbH ',
+    'folderID_list': ['014ESGVDFY4242WQCDEZFZWNARMVTX7SU3'],
+    'backupID': '014ESGVDA4AYK6UCUXYFGZHVAEBVQ3SVDZ',
+    'extract_data': 'extract_data_edeka'
     }
     # 'markant':{
     # 'name': 'Kaufland Dienstleistung GmbH & Co.KG',
     # 'folderID_list': ['014ESGVDB4ANY4HFF33VFZ5DSYKZH4EAIS'],
-    # 'backupID': '014ESGVDELNAZWP4HU2BHYZXKXBIXHYA6Y',
+    # 'backupID': '014ESGVDAXVCYACKLXRNBZ7ZHKIBJ2B6LP',
     # 'extract_data': 'extract_data_markant'
     # }
 }

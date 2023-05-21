@@ -10,7 +10,8 @@ from datetime import datetime
 import io
 from config_files.all_extracts import extract_data_lidl, extract_data_norma, extract_data_aldi_nord, \
     extract_data_kaufland, extract_data_hoferAT, extract_data_aldi_sued, extract_data_aldi_sued_2, extract_data_lidl_it, \
-    extract_data_lidl_rs,extract_data_lidl_fr,extract_data_lidl_nl,extract_data_lidl_at_si_es_lt_cz_int,extract_data_lidl_hr
+    extract_data_lidl_rs,extract_data_lidl_fr,extract_data_lidl_nl,extract_data_lidl_at_si_es_lt_cz_int,extract_data_lidl_hr, \
+    extract_data_markant, extract_data_edeka
 from config_files.move_to_archive import move_file_to_archive
 from config_files.send_webhook import webhook
 
@@ -38,93 +39,139 @@ def check_file(kontarhent_folderID_list, kontrahent_extract_data, kontrahent_nam
                 move_file_to_archive(file_id, file.get('name'), kontarhent_backup_folderID)
                 continue
             else:
-                # url do pliku
-                download_url = file.get("@microsoft.graph.downloadUrl")
-                # wyciągnięcie nazwy pliku
-                pdf_name = file.get("name")
-                log_add_line(f'próba przetworzenia pliku:{pdf_name} od {kontrahent_name}')
-                # sprawdzenie czy plik jest w formacie pdf
-                if pdf_name.endswith('.PDF') or pdf_name.endswith('.pdf'):
-                    print(f'file found: {pdf_name}')
-                    # obługa wyjątków związanych z połaczeniem Graph
-                    for i in range(20):
-                        try:
-                            response = requests.get(download_url, headers=headers)
-                            response.raise_for_status()
-                            # wybranie odpowiedniej funkcji wyciągania danych
-                            try:
-                                if kontrahent_extract_data == 'extract_data_hoferAT':
-                                    df = extract_data_hoferAT(io.BytesIO(response.content))
-                                    break
-                                elif kontrahent_extract_data == 'extract_data_aldi_sued' and (
-                                        pdf_name.find('Attachment') != -1):
-                                    df = extract_data_aldi_sued(io.BytesIO(response.content))
-                                    break
-                                elif kontrahent_extract_data == 'extract_data_aldi_sued' and (
-                                        pdf_name.find('Attachment') == -1):
-                                    df = extract_data_aldi_sued_2(io.BytesIO(response.content))
-                                    break
-                                elif kontrahent_extract_data == 'extract_data_aldi_nord':
-                                    df = extract_data_aldi_nord(io.BytesIO(response.content))
-                                    break
-                                elif kontrahent_extract_data == 'extract_data_lidl':
-                                    df = extract_data_lidl(io.BytesIO(response.content))
-                                    break
-                                elif kontrahent_extract_data == 'extract_data_kaufland':
-                                    df = extract_data_kaufland(io.BytesIO(response.content))
-                                    break
-                                elif kontrahent_extract_data == 'extract_data_norma':
-                                    df = extract_data_norma(io.BytesIO(response.content))
-                                    break
-                                elif kontrahent_extract_data == 'extract_data_lidl_it':
-                                    df = extract_data_lidl_it(io.BytesIO(response.content))
-                                    break
-                                elif kontrahent_extract_data == 'extract_data_lidl_hr':
-                                    df = extract_data_lidl_hr(io.BytesIO(response.content))
-                                    break
-                                elif kontrahent_extract_data == 'extract_data_lidl_nl':
-                                    df = extract_data_lidl_nl(io.BytesIO(response.content))
-                                    break
-                                elif kontrahent_extract_data == 'extract_data_lidl_fr':
-                                    df = extract_data_lidl_fr(io.BytesIO(response.content))
-                                    break
-                                elif kontrahent_extract_data == 'extract_data_lidl_at_si_es_lt_cz_int':
-                                    df = extract_data_lidl_at_si_es_lt_cz_int(io.BytesIO(response.content))
-                                    break
-                                elif kontrahent_extract_data == 'extract_data_lidl_rs':
-                                    df = extract_data_lidl_rs(io.BytesIO(response.content))
-                                    break
-                                # if kontrahent_extract_data == 'extract_data_markant':
-                                #     df = extract_data_markant(io.BytesIO(response.content))
-                                # df = dd(io.BytesIO(response.content))
-                                if len(df) == 0:
-                                    # If no tables were found, skip the file
-                                    print(f"No tables found in {pdf_name}, skipping...")
-                                    continue
-                            except Exception as e:
-                                # If an error occurs during table extraction, skip the file
-                                print(f"Error extracting tables from {pdf_name}: {e}")
-                                continue
-                        except requests.exceptions.HTTPError as http:
-                            print(f'error: {http}')
-                            time.sleep(5)
-                        except requests.exceptions.SSLError as ssl:
-                            print(f'error: {ssl}')
-                            time.sleep(5)
-                        except requests.exceptions.ConnectionError as con:
-                            print(f'error: {con}')
-                            time.sleep(5)
-                    else:
-                        print('Maximum number of retries (20) exceeded. Could not download file.')
-                    # wyciąganie daty z pliku
-                    extract_date = datetime.strptime(file.get("createdDateTime")[0:10], '%Y-%m-%d').strftime('%d.%m.%Y')
-                    # wyliczenie sumy z columny Document_Value
-                    extract_sum = df.iloc[:, 2].sum()
-                    # wyciągnięcie ID pliku
-                    file_id = file.get("id")
-                    # SQL
-                    export_to_SQL(df, extract_date, extract_sum, kontrahent_name, pdf_name)
-                    # Archive
-                    move_file_to_archive(file_id, pdf_name, kontarhent_backup_folderID)
-                    # webhook
-                    webhook(pdf_name, extract_date, kontrahent_name)
+                process_file(file, headers, kontrahent_name,kontrahent_extract_data, kontarhent_backup_folderID)
+
+
+def process_file(file, headers, kontrahent_name,kontrahent_extract_data, kontarhent_backup_folderID):
+    # url do pliku
+    download_url = file.get("@microsoft.graph.downloadUrl")
+    # wyciągnięcie nazwy pliku
+    pdf_name = file.get("name")
+    log_add_line(f'próba przetworzenia pliku:{pdf_name} od {kontrahent_name}')
+    # sprawdzenie czy plik jest w formacie pdf
+    if pdf_name.lower().endswith('.pdf'):
+        print(pdf_name)
+        for i in range(20):
+            try:
+                df = extract_data(kontrahent_extract_data,
+                                  io.BytesIO(requests.get(download_url, headers=headers).content), pdf_name)
+                if len(df) == 0:
+                    print(f"No tables found in {pdf_name}, skipping...")
+                    break
+                extract_date = datetime.strptime(file.get("createdDateTime")[0:10], '%Y-%m-%d').strftime('%d.%m.%Y')
+                extract_sum = df['Document_Value'].sum()
+                file_id = file.get("id")
+                export_to_SQL(df, extract_date, extract_sum, kontrahent_name, pdf_name)
+                move_file_to_archive(file_id, pdf_name, kontarhent_backup_folderID)
+                webhook(pdf_name, extract_date, kontrahent_name)
+                break
+            except (
+            requests.exceptions.HTTPError, requests.exceptions.SSLError, requests.exceptions.ConnectionError) as error:
+                print(f'Error: {error}')
+                time.sleep(5)
+        else:
+            print('Maximum number of retries (20) exceeded. Could not download file.')
+def extract_data(kontrahent_extract_data, content, pdf_name):
+    extract_data_func_dict = {
+        'extract_data_hoferAT': extract_data_hoferAT,
+        'extract_data_aldi_sued': extract_data_aldi_sued,
+        'extract_data_aldi_nord': extract_data_aldi_nord,
+        'extract_data_lidl': extract_data_lidl,
+        'extract_data_kaufland': extract_data_kaufland,
+        'extract_data_norma': extract_data_norma,
+        'extract_data_lidl_it': extract_data_lidl_it,
+        'extract_data_lidl_hr': extract_data_lidl_hr,
+        'extract_data_lidl_nl': extract_data_lidl_nl,
+        'extract_data_lidl_fr': extract_data_lidl_fr,
+        'extract_data_lidl_at_si_es_lt_cz_int': extract_data_lidl_at_si_es_lt_cz_int,
+        'extract_data_lidl_rs': extract_data_lidl_rs,
+        'extract_data_markant': extract_data_markant,
+        'extract_data_edeka': extract_data_edeka,
+    }
+    extract_data_func = extract_data_func_dict.get(kontrahent_extract_data)
+    if extract_data_func == extract_data_aldi_sued:
+        if pdf_name.find('Attachment') == -1:
+            extract_data_func = extract_data_aldi_sued_2
+    return extract_data_func(content) if extract_data_func else None
+                    # # obługa wyjątków związanych z połaczeniem Graph
+                    # for i in range(20):
+                    #     try:
+                    #         response = requests.get(download_url, headers=headers)
+                    #         response.raise_for_status()
+                    #         # wybranie odpowiedniej funkcji wyciągania danych
+                    #         try:
+                    #             if kontrahent_extract_data == 'extract_data_hoferAT':
+                    #                 df = extract_data_hoferAT(io.BytesIO(response.content))
+                    #                 break
+                    #             elif kontrahent_extract_data == 'extract_data_aldi_sued' and (
+                    #                     pdf_name.find('Attachment') != -1):
+                    #                 df = extract_data_aldi_sued(io.BytesIO(response.content))
+                    #                 break
+                    #             elif kontrahent_extract_data == 'extract_data_aldi_sued' and (
+                    #                     pdf_name.find('Attachment') == -1):
+                    #                 df = extract_data_aldi_sued_2(io.BytesIO(response.content))
+                    #                 break
+                    #             elif kontrahent_extract_data == 'extract_data_aldi_nord':
+                    #                 df = extract_data_aldi_nord(io.BytesIO(response.content))
+                    #                 break
+                    #             elif kontrahent_extract_data == 'extract_data_lidl':
+                    #                 df = extract_data_lidl(io.BytesIO(response.content))
+                    #                 break
+                    #             elif kontrahent_extract_data == 'extract_data_kaufland':
+                    #                 df = extract_data_kaufland(io.BytesIO(response.content))
+                    #                 break
+                    #             elif kontrahent_extract_data == 'extract_data_norma':
+                    #                 df = extract_data_norma(io.BytesIO(response.content))
+                    #                 break
+                    #             elif kontrahent_extract_data == 'extract_data_lidl_it':
+                    #                 df = extract_data_lidl_it(io.BytesIO(response.content))
+                    #                 break
+                    #             elif kontrahent_extract_data == 'extract_data_lidl_hr':
+                    #                 df = extract_data_lidl_hr(io.BytesIO(response.content))
+                    #                 break
+                    #             elif kontrahent_extract_data == 'extract_data_lidl_nl':
+                    #                 df = extract_data_lidl_nl(io.BytesIO(response.content))
+                    #                 break
+                    #             elif kontrahent_extract_data == 'extract_data_lidl_fr':
+                    #                 df = extract_data_lidl_fr(io.BytesIO(response.content))
+                    #                 break
+                    #             elif kontrahent_extract_data == 'extract_data_lidl_at_si_es_lt_cz_int':
+                    #                 df = extract_data_lidl_at_si_es_lt_cz_int(io.BytesIO(response.content))
+                    #                 break
+                    #             elif kontrahent_extract_data == 'extract_data_lidl_rs':
+                    #                 df = extract_data_lidl_rs(io.BytesIO(response.content))
+                    #                 break
+                    #             # if kontrahent_extract_data == 'extract_data_markant':
+                    #             #     df = extract_data_markant(io.BytesIO(response.content))
+                    #             # df = dd(io.BytesIO(response.content))
+                    #             if len(df) == 0:
+                    #                 # If no tables were found, skip the file
+                    #                 print(f"No tables found in {pdf_name}, skipping...")
+                    #                 continue
+                    #         except Exception as e:
+                    #             # If an error occurs during table extraction, skip the file
+                    #             print(f"Error extracting tables from {pdf_name}: {e}")
+                    #             continue
+                    #     except requests.exceptions.HTTPError as http:
+                    #         print(f'error: {http}')
+                    #         time.sleep(5)
+                    #     except requests.exceptions.SSLError as ssl:
+                    #         print(f'error: {ssl}')
+                    #         time.sleep(5)
+                    #     except requests.exceptions.ConnectionError as con:
+                    #         print(f'error: {con}')
+                    #         time.sleep(5)
+                    # else:
+                    #     print('Maximum number of retries (20) exceeded. Could not download file.')
+                    # # wyciąganie daty z pliku
+                    # extract_date = datetime.strptime(file.get("createdDateTime")[0:10], '%Y-%m-%d').strftime('%d.%m.%Y')
+                    # # wyliczenie sumy z columny Document_Value
+                    # extract_sum = df.iloc[:, 2].sum()
+                    # # wyciągnięcie ID pliku
+                    # file_id = file.get("id")
+                    # # SQL
+                    # export_to_SQL(df, extract_date, extract_sum, kontrahent_name, pdf_name)
+                    # # Archive
+                    # move_file_to_archive(file_id, pdf_name, kontarhent_backup_folderID)
+                    # # webhook
+                    # webhook(pdf_name, extract_date, kontrahent_name)
